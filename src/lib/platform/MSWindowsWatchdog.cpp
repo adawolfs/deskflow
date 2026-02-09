@@ -510,7 +510,6 @@ void MSWindowsWatchdog::sasLoop(const void *) // NOSONAR - Thread entry point si
   MSWindowsHandle sendSasEvent(CreateEvent(nullptr, FALSE, FALSE, LPCWSTR(kSendSasEventName)));
   // Get the last error immediately to avoid it being overwritten by subsequent API calls
   DWORD lastError = GetLastError();
-  
   if (sendSasEvent.get() == nullptr) {
     LOG_ERR("could not create SAS event, error: %s", windowsErrorToString(lastError).c_str());
     return;

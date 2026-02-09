@@ -187,7 +187,6 @@ void AppUtilWindows::eventLoop()
   HANDLE hCloseEvent = CreateEvent(nullptr, TRUE, FALSE, kCloseEventName);
   // Get the last error immediately to avoid it being overwritten by subsequent API calls
   DWORD lastError = GetLastError();
-  
   if (!hCloseEvent) {
     LOG_CRIT("failed to create event for windows event loop");
     throw std::runtime_error(windowsErrorToString(lastError));
