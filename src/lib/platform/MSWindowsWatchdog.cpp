@@ -508,14 +508,16 @@ void MSWindowsWatchdog::sasLoop(const void *) // NOSONAR - Thread entry point si
   // Create an event so that other processes can tell the daemon to call the `SendSAS` function.
   // Create this once before the loop to avoid ERROR_ALREADY_EXISTS (error 183).
   MSWindowsHandle sendSasEvent(CreateEvent(nullptr, FALSE, FALSE, LPCWSTR(kSendSasEventName)));
+  // Get the last error immediately to avoid it being overwritten by subsequent API calls
+  DWORD lastError = GetLastError();
+  
   if (sendSasEvent.get() == nullptr) {
-    LOG_ERR("could not create SAS event, error: %s", windowsErrorToString(GetLastError()).c_str());
+    LOG_ERR("could not create SAS event, error: %s", windowsErrorToString(lastError).c_str());
     return;
   }
 
   // Check if the event already existed (which is OK - we'll reuse it).
   // This can happen if a previous instance didn't clean up properly.
-  DWORD lastError = GetLastError();
   if (lastError == ERROR_ALREADY_EXISTS) {
     LOG_DEBUG("SAS event already exists, reusing existing event");
   }

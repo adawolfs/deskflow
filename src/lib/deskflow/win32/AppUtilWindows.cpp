@@ -185,14 +185,16 @@ HKL AppUtilWindows::getCurrentKeyboardLayout() const
 void AppUtilWindows::eventLoop()
 {
   HANDLE hCloseEvent = CreateEvent(nullptr, TRUE, FALSE, kCloseEventName);
+  // Get the last error immediately to avoid it being overwritten by subsequent API calls
+  DWORD lastError = GetLastError();
+  
   if (!hCloseEvent) {
     LOG_CRIT("failed to create event for windows event loop");
-    throw std::runtime_error(windowsErrorToString(GetLastError()));
+    throw std::runtime_error(windowsErrorToString(lastError));
   }
 
   // Check if the event already existed (which is OK - we'll reuse it).
   // This can happen if a previous instance didn't clean up properly or if multiple instances are running.
-  DWORD lastError = GetLastError();
   if (lastError == ERROR_ALREADY_EXISTS) {
     LOG_DEBUG("close event already exists, reusing existing event");
   }
