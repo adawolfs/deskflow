@@ -190,6 +190,13 @@ void AppUtilWindows::eventLoop()
     throw std::runtime_error(windowsErrorToString(GetLastError()));
   }
 
+  // Check if the event already existed (which is OK - we'll reuse it).
+  // This can happen if a previous instance didn't clean up properly or if multiple instances are running.
+  DWORD lastError = GetLastError();
+  if (lastError == ERROR_ALREADY_EXISTS) {
+    LOG_DEBUG("close event already exists, reusing existing event");
+  }
+
   LOG_DEBUG("windows event loop running");
   {
     std::scoped_lock lock{m_eventThreadStartedMutex};

@@ -505,17 +505,24 @@ void MSWindowsWatchdog::sasLoop(const void *) // NOSONAR - Thread entry point si
     throw std::runtime_error("SendSAS function not initialized");
   }
 
+  // Create an event so that other processes can tell the daemon to call the `SendSAS` function.
+  // Create this once before the loop to avoid ERROR_ALREADY_EXISTS (error 183).
+  MSWindowsHandle sendSasEvent(CreateEvent(nullptr, FALSE, FALSE, LPCWSTR(kSendSasEventName)));
+  if (sendSasEvent.get() == nullptr) {
+    LOG_ERR("could not create SAS event, error: %s", windowsErrorToString(GetLastError()).c_str());
+    return;
+  }
+
+  // Check if the event already existed (which is OK - we'll reuse it).
+  // This can happen if a previous instance didn't clean up properly.
+  DWORD lastError = GetLastError();
+  if (lastError == ERROR_ALREADY_EXISTS) {
+    LOG_DEBUG("SAS event already exists, reusing existing event");
+  }
+
   while (m_running) {
     if (m_processState != ProcessState::Running) {
       LOG_DEBUG2("watchdog not running, skipping SendSAS");
-      Arch::sleep(1);
-      continue;
-    }
-
-    // Create a an event so that other processes can tell the daemon to call the `SendSAS` function.
-    MSWindowsHandle sendSasEvent(CreateEvent(nullptr, FALSE, FALSE, LPCWSTR(kSendSasEventName)));
-    if (sendSasEvent.get() == nullptr) {
-      LOG_ERR("could not create SAS event, error: %s", windowsErrorToString(GetLastError()).c_str());
       Arch::sleep(1);
       continue;
     }
